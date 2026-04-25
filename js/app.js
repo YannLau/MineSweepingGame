@@ -73,6 +73,10 @@ document.addEventListener('DOMContentLoaded', function () {
     e.preventDefault();
     var cellEl = e.target.closest('.cell');
     if (!cellEl) return;
+    // Skip if this cell was just flagged via touch long-press (Android double-fire)
+    if (lastTouchFlagCell === cellEl && Date.now() - lastTouchFlagTime < 600) {
+      return;
+    }
     handleCellFlag(parseInt(cellEl.dataset.row, 10), parseInt(cellEl.dataset.col, 10));
   });
 
@@ -80,6 +84,8 @@ document.addEventListener('DOMContentLoaded', function () {
   var longPressTimer = null;
   var touchStartTarget = null;
   var touchMoved = false;
+  var lastTouchFlagTime = 0;
+  var lastTouchFlagCell = null;
 
   boardEl.addEventListener('touchstart', function (e) {
     var cellEl = e.target.closest('.cell');
@@ -93,6 +99,8 @@ document.addEventListener('DOMContentLoaded', function () {
           parseInt(touchStartTarget.dataset.row, 10),
           parseInt(touchStartTarget.dataset.col, 10)
         );
+        lastTouchFlagTime = Date.now();
+        lastTouchFlagCell = touchStartTarget;
         if (navigator.vibrate) { navigator.vibrate(15); }
         longPressTimer = null;
         touchStartTarget = null;
@@ -137,6 +145,10 @@ document.addEventListener('DOMContentLoaded', function () {
   undoBtn.addEventListener('click', function () {
     if (game.undo()) {
       refreshUI();
+      clearInterval(timerInterval);
+      timerInterval = setInterval(function () {
+        updateTimer(game, timerEl);
+      }, 200);
       updateCheatButton(cheatToggle, game);
       showMessage(messageContainer, '\u21A9 已撤销，继续游戏', 'info');
     }
