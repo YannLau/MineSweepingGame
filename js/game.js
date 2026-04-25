@@ -25,6 +25,7 @@ class MinesweeperGame {
           isMine: false,
           isRevealed: false,
           isFlagged: false,
+          isQuestion: false,
           adjacentMines: 0
         };
       }
@@ -129,7 +130,7 @@ class MinesweeperGame {
     if (!this.isValidCell(r, c)) return this.gameState;
     const cell = this.board[r][c];
 
-    if (cell.isRevealed || cell.isFlagged) return this.gameState;
+    if (cell.isRevealed || cell.isFlagged || cell.isQuestion) return this.gameState;
     if (this.gameState === 'won' || this.gameState === 'lost') return this.gameState;
 
     if (!this.firstClickDone) {
@@ -161,7 +162,7 @@ class MinesweeperGame {
   _floodFill(r, c) {
     if (!this.isValidCell(r, c)) return;
     const cell = this.board[r][c];
-    if (cell.isRevealed || cell.isFlagged || cell.isMine) return;
+    if (cell.isRevealed || cell.isFlagged || cell.isQuestion || cell.isMine) return;
 
     cell.isRevealed = true;
     this.revealedCount++;
@@ -173,13 +174,21 @@ class MinesweeperGame {
     }
   }
 
-  toggleFlag(r, c) {
+  cycleMark(r, c) {
     const cell = this.board[r][c];
     if (cell.isRevealed) return;
     if (this.gameState !== 'waiting' && this.gameState !== 'playing') return;
 
-    cell.isFlagged = !cell.isFlagged;
-    this.flagCount += cell.isFlagged ? 1 : -1;
+    if (!cell.isFlagged && !cell.isQuestion) {
+      cell.isFlagged = true;
+      this.flagCount++;
+    } else if (cell.isFlagged) {
+      cell.isFlagged = false;
+      this.flagCount--;
+      cell.isQuestion = true;
+    } else {
+      cell.isQuestion = false;
+    }
   }
 
   undo() {
