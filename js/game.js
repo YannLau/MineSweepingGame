@@ -126,6 +126,7 @@ class MinesweeperGame {
   }
 
   reveal(r, c) {
+    if (!this.isValidCell(r, c)) return this.gameState;
     const cell = this.board[r][c];
 
     if (cell.isRevealed || cell.isFlagged) return this.gameState;
@@ -158,9 +159,9 @@ class MinesweeperGame {
   }
 
   _floodFill(r, c) {
+    if (!this.isValidCell(r, c)) return;
     const cell = this.board[r][c];
     if (cell.isRevealed || cell.isFlagged || cell.isMine) return;
-    if (!this.isValidCell(r, c)) return;
 
     cell.isRevealed = true;
     this.revealedCount++;
