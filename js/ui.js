@@ -12,8 +12,6 @@ const NUMBER_COLORS = [
 
 function renderBoard(game, container) {
   container.innerHTML = '';
-  container.style.gridTemplateColumns = `repeat(${game.cols}, 1fr)`;
-  container.style.gridTemplateRows = `repeat(${game.rows}, 1fr)`;
 
   for (let r = 0; r < game.rows; r++) {
     for (let c = 0; c < game.cols; c++) {
