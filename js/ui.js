@@ -35,6 +35,9 @@ function renderBoard(game, container) {
       } else if (cell.isFlagged) {
         cellEl.classList.add('flagged');
         cellEl.textContent = '\uD83D\uDEA9';
+      } else if (cell.isQuestion) {
+        cellEl.classList.add('question');
+        cellEl.textContent = '\u2753';
       }
 
       if (game.cheatMode && !cell.isRevealed && cell.isMine) {
