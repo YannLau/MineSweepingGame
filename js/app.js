@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function refreshUI() {
     renderBoard(game, boardEl);
+    resizeBoard();
     updateMineCounter(game, mineCounterEl);
     updateTimer(game, timerEl);
     updateUndoButton(undoBtn, game);
@@ -37,8 +38,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 200);
 
     refreshUI();
+    resizeBoard();
     updateCheatButton(cheatToggle, game);
     messageContainer.innerHTML = '';
+  }
+
+  function resizeBoard() {
+    if (!game || !boardEl) return;
+    var boardArea = boardEl.parentElement;
+    if (!boardArea) return;
+    var cellW = Math.floor(boardArea.clientWidth / game.cols);
+    var cellH = Math.floor(boardArea.clientHeight / game.rows);
+    var size = Math.max(Math.min(cellW, cellH), 16);
+    boardEl.style.gridTemplateColumns = 'repeat(' + game.cols + ', ' + size + 'px)';
+    boardEl.style.gridTemplateRows = 'repeat(' + game.rows + ', ' + size + 'px)';
+    boardEl.style.fontSize = Math.max(10, Math.floor(size * 0.55)) + 'px';
   }
 
   function handleCellReveal(row, col) {
@@ -58,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function handleCellFlag(row, col) {
-    game.toggleFlag(row, col);
+    game.cycleMark(row, col);
     refreshUI();
   }
 
@@ -73,71 +87,9 @@ document.addEventListener('DOMContentLoaded', function () {
     e.preventDefault();
     var cellEl = e.target.closest('.cell');
     if (!cellEl) return;
-    // Skip if this cell was just flagged via touch long-press (Android double-fire)
-    if (lastTouchFlagCell === cellEl && Date.now() - lastTouchFlagTime < 600) {
-      return;
-    }
     handleCellFlag(parseInt(cellEl.dataset.row, 10), parseInt(cellEl.dataset.col, 10));
   });
 
-  // --- Touch events (mobile long-press for flag) ---
-  var longPressTimer = null;
-  var touchStartTarget = null;
-  var touchMoved = false;
-  var lastTouchFlagTime = 0;
-  var lastTouchFlagCell = null;
-
-  boardEl.addEventListener('touchstart', function (e) {
-    var cellEl = e.target.closest('.cell');
-    if (!cellEl) return;
-    touchStartTarget = cellEl;
-    touchMoved = false;
-
-    longPressTimer = setTimeout(function () {
-      if (!touchMoved && touchStartTarget) {
-        handleCellFlag(
-          parseInt(touchStartTarget.dataset.row, 10),
-          parseInt(touchStartTarget.dataset.col, 10)
-        );
-        lastTouchFlagTime = Date.now();
-        lastTouchFlagCell = touchStartTarget;
-        if (navigator.vibrate) { navigator.vibrate(15); }
-        longPressTimer = null;
-        touchStartTarget = null;
-      }
-    }, 500);
-  }, { passive: true });
-
-  boardEl.addEventListener('touchmove', function () {
-    if (longPressTimer) {
-      touchMoved = true;
-    }
-  }, { passive: true });
-
-  boardEl.addEventListener('touchend', function (e) {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-      if (!touchMoved && touchStartTarget) {
-        // Short tap = reveal
-        handleCellReveal(
-          parseInt(touchStartTarget.dataset.row, 10),
-          parseInt(touchStartTarget.dataset.col, 10)
-        );
-      }
-    }
-    touchStartTarget = null;
-    touchMoved = false;
-  });
-
-  boardEl.addEventListener('touchcancel', function () {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-    touchStartTarget = null;
-    touchMoved = false;
-  });
 
   // --- Control buttons ---
   newGameBtn.addEventListener('click', startNewGame);
@@ -158,6 +110,10 @@ document.addEventListener('DOMContentLoaded', function () {
     game.cheatMode = !game.cheatMode;
     renderBoard(game, boardEl);
     updateCheatButton(cheatToggle, game);
+  });
+
+  window.addEventListener('resize', function () {
+    resizeBoard();
   });
 
   // --- Difficulty input validation ---
