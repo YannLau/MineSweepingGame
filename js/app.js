@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (result === 'lost') {
       game.revealAllMines();
+      clearInterval(timerInterval);
       renderBoard(game, boardEl);
       updateUndoButton(undoBtn, game);
       showMessage(messageContainer, '\uD83D\uDCA5 踩到雷了！点击"撤销"可回退上一步', 'error');
@@ -65,14 +66,14 @@ document.addEventListener('DOMContentLoaded', function () {
   boardEl.addEventListener('click', function (e) {
     var cellEl = e.target.closest('.cell');
     if (!cellEl) return;
-    handleCellReveal(parseInt(cellEl.dataset.row), parseInt(cellEl.dataset.col));
+    handleCellReveal(parseInt(cellEl.dataset.row, 10), parseInt(cellEl.dataset.col, 10));
   });
 
   boardEl.addEventListener('contextmenu', function (e) {
     e.preventDefault();
     var cellEl = e.target.closest('.cell');
     if (!cellEl) return;
-    handleCellFlag(parseInt(cellEl.dataset.row), parseInt(cellEl.dataset.col));
+    handleCellFlag(parseInt(cellEl.dataset.row, 10), parseInt(cellEl.dataset.col, 10));
   });
 
   // --- Touch events (mobile long-press for flag) ---
@@ -89,8 +90,8 @@ document.addEventListener('DOMContentLoaded', function () {
     longPressTimer = setTimeout(function () {
       if (!touchMoved && touchStartTarget) {
         handleCellFlag(
-          parseInt(touchStartTarget.dataset.row),
-          parseInt(touchStartTarget.dataset.col)
+          parseInt(touchStartTarget.dataset.row, 10),
+          parseInt(touchStartTarget.dataset.col, 10)
         );
         if (navigator.vibrate) { navigator.vibrate(15); }
         longPressTimer = null;
@@ -112,10 +113,19 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!touchMoved && touchStartTarget) {
         // Short tap = reveal
         handleCellReveal(
-          parseInt(touchStartTarget.dataset.row),
-          parseInt(touchStartTarget.dataset.col)
+          parseInt(touchStartTarget.dataset.row, 10),
+          parseInt(touchStartTarget.dataset.col, 10)
         );
       }
+    }
+    touchStartTarget = null;
+    touchMoved = false;
+  });
+
+  boardEl.addEventListener('touchcancel', function () {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
     }
     touchStartTarget = null;
     touchMoved = false;
@@ -145,23 +155,15 @@ document.addEventListener('DOMContentLoaded', function () {
     var mines = parseInt(minesInput.value, 10) || 10;
     var maxMines = rows * cols - 9;
     if (mines > maxMines) {
-      minesInput.value = maxMines;
-    }
-    if (mines < 1) {
+      minesInput.value = Math.max(1, maxMines);
+    } else if (mines < 1) {
       minesInput.value = 1;
     }
   }
 
   rowsInput.addEventListener('change', clampMines);
   colsInput.addEventListener('change', clampMines);
-  minesInput.addEventListener('change', function () {
-    var rows = parseInt(rowsInput.value, 10) || 9;
-    var cols = parseInt(colsInput.value, 10) || 9;
-    var mines = parseInt(minesInput.value, 10) || 10;
-    var maxMines = rows * cols - 9;
-    if (mines > maxMines) minesInput.value = maxMines;
-    if (mines < 1) minesInput.value = 1;
-  });
+  minesInput.addEventListener('change', clampMines);
 
   // --- Initial game ---
   startNewGame();
